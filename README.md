@@ -15,6 +15,7 @@ This script interacts with the Ollama API, which is running on the local machine
 3. Run the script from the Script Manager
 4. Select the model you want to use
 5. Select how you want to function to be analysed
+6. Wait until the output is printed to the console (wait time varies depending on model and specifications of host)
 
 ## Notes
 
