@@ -21,7 +21,7 @@ This script interacts with the Ollama API, which is running on the local machine
 
 - It is worth noting that the analysis will only be as good as the model, this script basically just bridges the models and Ghidra.
 - The better the model (more parameters, slower) the more comprehensive and correct the analysis will be.
-- If you want a quick overview of a function, *codellama:7b* is pretty quick and gives a decent analysis/can identify simple functions such as strcpy
+- If you want a quick overview of a function, *codellama:7b* is pretty quick and gives a decent analysis/can identify simple functions such as *strcpy()* (most of the time!)
 
 ## Example
 
