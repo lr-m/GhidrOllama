@@ -11,7 +11,7 @@ from ghidra.app.decompiler import DecompInterface
 
 # General function to interact with the Ollama API
 def interactWithOllamaAPI(model, prompt, c_code):
-    monitor.setMessage("Starting up the " + model + " model...")
+    monitor.setMessage("Model " + model + " is processing input...")
     print("\n>> Explanation:")
     url = 'http://localhost:11434/api/generate'
     data = {
@@ -74,14 +74,6 @@ def getCurrentDecompiledFunction():
         return decompiler.decompileFunction(function, 30, monitor).getDecompiledFunction().getC()
     except Exception as e:
         raise ValueError("Unable to decompile function: {}".format(e))
-
-
-def getSelectedInstruction():
-    listing = currentProgram.getListing()
-    instruction = listing.getInstructionAt(currentLocation.getAddress())
-    if instruction is not None:
-    	return instruction.toString()
-    return None
    
 
 # Makes a request to the Ollama API to fetch a list of installed models, prompts user to select which model to use
@@ -109,22 +101,43 @@ def select_model():
     return choice
 
 
-# Function to explain the code using the OpenAI API
+# Returns the instruction that is currently selected in the listing window as a string
+def getSelectedInstruction():
+    listing = currentProgram.getListing()
+    instruction = listing.getInstructionAt(currentLocation.getAddress())
+    if instruction is not None:
+    	return instruction.toString()
+    return None
+
+
+# Function to explain the selected function using the Ollama API
 def explainFunction(model, c_code):
     prompt = "Can you briefly summarise what the following function does/what its purpose is? Try and explain in a few sentences.\n\n"
     return interactWithOllamaAPI(model, prompt, c_code)
 
 
-# Function to explain the code using the OpenAI API
+# Function to rewrite the function with descriptive names and comments using the Ollama API
+def tidyUpFunction(model, c_code):
+    prompt = "The function name, local variables, and parameters are not named very well. Can you take a look at the function and replace the less-descriptive original names of function/arguments/local variables with more descriptive names that indicate its purpose? Please also add useful code comments, I want to see the full function rewritten using the more descriptive replacements. Other than the name changes and comments, the function must remain identical.\n\n"
+    return interactWithOllamaAPI(model, prompt, c_code)
+
+
+# Function to rewrite function with comments using the Ollama API
+def addFunctionComments(model, c_code):
+    prompt = "Could you rewrite the following function but the only thing that should change is that you add code comments? Keep them useful and consise, and only add them if they are important for understanding the code. The only output I want to see is the C function with added code comments.\n\n"
+    return interactWithOllamaAPI(model, prompt, c_code)
+
+
+# Function to explain the selected instruction using the Ollama API
 def explainInstruction(model, c_code):
     architecture_name = currentProgram.getLanguage().getProcessor().toString()
     prompt = "Can you briefly explain the following instruction? The architecture is " + architecture_name + ". Can you also show the instruction format?\n\n"
     return interactWithOllamaAPI(model, prompt, c_code)
 
 
-# Function to suggest a function name using the OpenAI API
+# Function to suggest selected function name using the Ollama API
 def suggestFunctionName(model, c_code):
-    prompt = "If you had written the following C code, what would you name this function and parameters based on its functionality/behaviour? Completely disregard the function name and also the names of any functions called within:\n\n"
+    prompt = "If you had written the following C code, what would you name this function and parameters based on its functionality/behaviour? Completely disregard the function name and also the names of any functions called within. Make 100% sure you suggest a possible function name, and also names for the function parameters!\n\n"
     return interactWithOllamaAPI(model, prompt, c_code)
 
 
@@ -135,12 +148,12 @@ def main():
     monitor.setMessage("Waiting for user input...")
 
     # Getting user input for the option
-    options = ['1 - Explain the current function', '2 - Suggest a suitable name for the current function', '3 - Explain selected instruction',  '4 - Enter general prompt']
+    options = ['1 - Explain the current function', '2 - Suggest a suitable name for the current function', '3 - Suggest function comments', '4 - Rewrite function to be descriptive', '5 - Explain selected instruction',  '6 - Enter general prompt']
     try:
         # Prompt the user to select one of the installed models
         choice = askChoice("Choice", "Pick what you want to ask the model", options, "Question Selection")
         option = int(choice.split(' ')[0])
-        if option not in [1, 2, 3, 4]:
+        if option not in [1, 2, 3, 4, 5, 6]:
             print("Invalid option. Please select a valid option.")
         else:
 	    print("\nSelected Option {}".format(option))
@@ -158,6 +171,18 @@ def main():
                     for key, value in stats_summary.items():
                         print(" {}: {}".format(key, value))
 		elif option == 3:
+                    c_code = getCurrentDecompiledFunction()
+                    explanation, stats_summary = addFunctionComments(model, c_code)
+                    print("\n\n>> Stats Summary:")
+                    for key, value in stats_summary.items():
+                        print(" {}: {}".format(key, value))
+                elif option == 4:
+                    c_code = getCurrentDecompiledFunction()
+                    explanation, stats_summary = tidyUpFunction(model, c_code)
+                    print("\n\n>> Stats Summary:")
+                    for key, value in stats_summary.items():
+                        print(" {}: {}".format(key, value))
+		elif option == 5:
                     c_code = getSelectedInstruction()
 		    if c_code is not None:
                         explanation, stats_summary = explainInstruction(model, c_code)
@@ -166,7 +191,7 @@ def main():
                             print(" {}: {}".format(key, value))  
 		    else:
 			print("No instruction selected!")
-                elif option == 4:
+                elif option == 6:
                     prompt = askString("GhidrOllama", "Enter your prompt:")
                     explanation, stats_summary = interactWithOllamaAPI(model, prompt, '')
                     print("\n\n>> Stats Summary:")
