@@ -12,7 +12,7 @@
 
 **Ollama API interaction Ghidra script for LLM-assisted reverse-engineering.**
 
-# GhidrOllama
+## What is this?
 
 This script interacts with the Ollama API hosted locally to interact with LLM's. It utilizes the Ollama API to perform various tasks such as explaining a C function's purpose, suggesting suitable names for functions, adding comments, explaining instructions, and answering questions without leaving Ghidra. This script is inspired by [GptHidra](https://github.com/evyatar9/GptHidra).
 
@@ -175,10 +175,10 @@ bne $v0,$zero,LAB_801a74a4
 
 > Sure! Here's an explanation of the `bne` instruction in MIPS and its instruction format:
 The `bne` instruction is a branch instruction that branches to a specified target address if two specified values are not equal. The syntax for this instruction is as follows:
-```
-bne <rs>,<rt>,<immediate>
-```
-Here, `<rs>` is the first operand (a general-purpose register), `<rt>` is the second operand (also a general-purpose register), and `<immediate>` is an immediate value that specifies the target address.
+> ```
+> bne <rs>,<rt>,<immediate>
+> ```
+> Here, `<rs>` is the first operand (a general-purpose register), `<rt>` is the second operand (also a general-purpose register), and `<immediate>` is an immediate value that specifies the target address.
 For example, in the instruction `bne v0,zero,0x801a74a4`, the `v0` register is compared to the `zero` register, and if they are not equal, control flow branches to the specified target address of `0x801a74a4`.
 
 ## Disclaimer
