@@ -1,5 +1,11 @@
 # Ollama API Interaction Script for Ghidra
 
+<p align="center">
+
+  <img src="https://github.com/luke-r-m/GhidrOllama/assets/47477832/c21b75ab-f186-4a2b-8206-15c1c1d5218b" width="200">
+
+</p>
+
 This script interacts with the Ollama API, which is running on the local machine. It utilizes the Ollama API to perform various tasks such as explaining a C function's purpose and suggesting suitable names for functions. This script is based on the [GptHidra](https://github.com/evyatar9/GptHidra) repository.
 
 ## Prerequisites
