@@ -4,10 +4,15 @@
 import urllib2
 import json
 from ghidra.util.task import TaskMonitor
+from ghidra.util.task import ConsoleTaskMonitor
+import sys
 from ghidra.app.decompiler import DecompInterface
+
 
 # General function to interact with the Ollama API
 def interactWithOllamaAPI(model, prompt, c_code):
+    monitor.setMessage("Starting up the " + model + " model...")
+    print("\n>> Explanation:")
     url = 'http://localhost:11434/api/generate'
     data = {
         "model": model,
@@ -20,31 +25,28 @@ def interactWithOllamaAPI(model, prompt, c_code):
 
     response_text = ""
     stats_summary = {}
+    built_line = ""
 
-    try:
-        while True:
-            line = response.readline()
-            if not line:
-                break
-            response_data = json.loads(line)
+    monitor.setMessage("Recieving response...")
+
+    while True:
+        character = response.read(1)
+        built_line += character
+	if character == '\n':
+            response_data = json.loads(built_line)
             if "error" in response_data:
                 raise ValueError(response_data["error"])
             if "response" in response_data:
                 response_text += response_data["response"]
-
+		printf(response_data["response"]),
             if response_data["done"]:
                 stats_summary = {
-                    "total_duration": response_data["total_duration"],
-                    "load_duration": response_data["load_duration"],
-                    "prompt_eval_count": response_data["prompt_eval_count"],
-                    "eval_count": response_data["eval_count"],
-                    "eval_duration": response_data["eval_duration"]
+                    "total_duration": str(int(response_data["total_duration"]) / 1000000000) + 's'
                 }
                 break
-    except KeyError as e:
-        raise ValueError("KeyError: {}".format(e))
+            built_line = ""
 
-    response_text = response_text.replace("\n", "")
+    monitor.setMessage("Done!")
 
     return response_text, stats_summary
 
@@ -74,6 +76,14 @@ def getCurrentDecompiledFunction():
         raise ValueError("Unable to decompile function: {}".format(e))
 
 
+def getSelectedInstruction():
+    listing = currentProgram.getListing()
+    instruction = listing.getInstructionAt(currentLocation.getAddress())
+    if instruction is not None:
+    	return instruction.toString()
+    return None
+   
+
 # Makes a request to the Ollama API to fetch a list of installed models, prompts user to select which model to use
 def select_model():
     url = 'http://localhost:11434/api/tags'
@@ -98,9 +108,17 @@ def select_model():
 
     return choice
 
+
 # Function to explain the code using the OpenAI API
 def explainFunction(model, c_code):
-    prompt = "Can you briefly summarise what the following function does/what its purpose is?\n\n"
+    prompt = "Can you briefly summarise what the following function does/what its purpose is? Try and explain in a few sentences.\n\n"
+    return interactWithOllamaAPI(model, prompt, c_code)
+
+
+# Function to explain the code using the OpenAI API
+def explainInstruction(model, c_code):
+    architecture_name = currentProgram.getLanguage().getProcessor().toString()
+    prompt = "Can you briefly explain the following instruction? The architecture is " + architecture_name + ". Can you also show the instruction format?\n\n"
     return interactWithOllamaAPI(model, prompt, c_code)
 
 
@@ -114,13 +132,15 @@ def main():
     # Call the function to fetch and print the model list
     model = select_model()
 
+    monitor.setMessage("Waiting for user input...")
+
     # Getting user input for the option
-    options = ['1 - Explain the selected function', '2 - Suggest a suitable name for the function', '3 - Enter prompt']
+    options = ['1 - Explain the current function', '2 - Suggest a suitable name for the current function', '3 - Explain selected instruction',  '4 - Enter general prompt']
     try:
         # Prompt the user to select one of the installed models
         choice = askChoice("Choice", "Pick what you want to ask the model", options, "Question Selection")
         option = int(choice.split(' ')[0])
-        if option not in [1, 2, 3]:
+        if option not in [1, 2, 3, 4]:
             print("Invalid option. Please select a valid option.")
         else:
 	    print("\nSelected Option {}".format(option))
@@ -128,32 +148,36 @@ def main():
                 if option == 1:
                     c_code = getCurrentDecompiledFunction()
                     explanation, stats_summary = explainFunction(model, c_code)
-                    print("\nExplanation:")
-                    print(explanation.replace('<|endoftext|>', ''))
-                    print("\nStats Summary:")
+                    print("\n\n>> Stats Summary:")
                     for key, value in stats_summary.items():
                         print(" {}: {}".format(key, value))
                 elif option == 2:
                     c_code = getCurrentDecompiledFunction()
                     explanation, stats_summary = suggestFunctionName(model, c_code)
-                    print("\nExplanation:")
-                    print(explanation.replace('<|endoftext|>', ''))
-                    print("\nStats Summary:")
+                    print("\n\n>> Stats Summary:")
                     for key, value in stats_summary.items():
                         print(" {}: {}".format(key, value))
-                elif option == 3:
+		elif option == 3:
+                    c_code = getSelectedInstruction()
+		    if c_code is not None:
+                        explanation, stats_summary = explainInstruction(model, c_code)
+			print("\n\n>> Stats Summary:")
+                        for key, value in stats_summary.items():
+                            print(" {}: {}".format(key, value))  
+		    else:
+			print("No instruction selected!")
+                elif option == 4:
                     prompt = askString("GhidrOllama", "Enter your prompt:")
                     explanation, stats_summary = interactWithOllamaAPI(model, prompt, '')
-                    print("\nExplanation:")
-                    print(explanation.replace('<|endoftext|>', ''))
-                    print("\nStats Summary:")
+                    print("\n\n>> Stats Summary:")
                     for key, value in stats_summary.items():
-                        print(" {}: {}".format(key, value))            
+                        print(" {}: {}".format(key, value))          
             except ValueError as e:
                 print(e)
     except ValueError:
         print("Invalid option. Please enter a number.")
     except KeyboardInterrupt:
         print("\nTerminating the script.")
+    print ''
 
 main()
