@@ -115,7 +115,7 @@ def main():
     model = select_model()
 
     # Getting user input for the option
-    options = ['1 - Explain the selected function', '2 - Suggest a suitable name for the function']
+    options = ['1 - Explain the selected function', '2 - Suggest a suitable name for the function', '3 - Enter prompt']
     try:
         # Prompt the user to select one of the installed models
         choice = askChoice("Choice", "Pick what you want to ask the model", options, "Question Selection")
@@ -142,8 +142,13 @@ def main():
                     for key, value in stats_summary.items():
                         print(" {}: {}".format(key, value))
                 elif option == 3:
-                    # Add  logic for option 3 here
-                    pass
+                    prompt = askString("GhidrOllama", "Enter your prompt:")
+                    explanation, stats_summary = interactWithOllamaAPI(model, prompt, '')
+                    print("\nExplanation:")
+                    print(explanation.replace('<|endoftext|>', ''))
+                    print("\nStats Summary:")
+                    for key, value in stats_summary.items():
+                        print(" {}: {}".format(key, value))            
             except ValueError as e:
                 print(e)
     except ValueError:
