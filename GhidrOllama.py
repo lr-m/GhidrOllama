@@ -156,47 +156,36 @@ def main():
         if option not in [1, 2, 3, 4, 5, 6]:
             print("Invalid option. Please select a valid option.")
         else:
+            stats_summary = None
 	    print("\nSelected Option {}".format(option))
             try:
                 if option == 1:
                     c_code = getCurrentDecompiledFunction()
                     explanation, stats_summary = explainFunction(model, c_code)
-                    print("\n\n>> Stats Summary:")
-                    for key, value in stats_summary.items():
-                        print(" {}: {}".format(key, value))
                 elif option == 2:
                     c_code = getCurrentDecompiledFunction()
                     explanation, stats_summary = suggestFunctionName(model, c_code)
-                    print("\n\n>> Stats Summary:")
-                    for key, value in stats_summary.items():
-                        print(" {}: {}".format(key, value))
 		elif option == 3:
                     c_code = getCurrentDecompiledFunction()
                     explanation, stats_summary = addFunctionComments(model, c_code)
-                    print("\n\n>> Stats Summary:")
-                    for key, value in stats_summary.items():
-                        print(" {}: {}".format(key, value))
                 elif option == 4:
                     c_code = getCurrentDecompiledFunction()
                     explanation, stats_summary = tidyUpFunction(model, c_code)
-                    print("\n\n>> Stats Summary:")
-                    for key, value in stats_summary.items():
-                        print(" {}: {}".format(key, value))
 		elif option == 5:
                     c_code = getSelectedInstruction()
 		    if c_code is not None:
                         explanation, stats_summary = explainInstruction(model, c_code)
-			print("\n\n>> Stats Summary:")
-                        for key, value in stats_summary.items():
-                            print(" {}: {}".format(key, value))  
 		    else:
 			print("No instruction selected!")
                 elif option == 6:
                     prompt = askString("GhidrOllama", "Enter your prompt:")
                     explanation, stats_summary = interactWithOllamaAPI(model, prompt, '')
+                
+		# Print stats summary
+                if stats_summary is not None:
                     print("\n\n>> Stats Summary:")
                     for key, value in stats_summary.items():
-                        print(" {}: {}".format(key, value))          
+                        print(" {}: {}".format(key, value))            
             except ValueError as e:
                 print(e)
     except ValueError:
