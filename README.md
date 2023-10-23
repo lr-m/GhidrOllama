@@ -97,71 +97,71 @@ As for the name of the function itself, I would suggest `strchr` (short for "str
 ### Option 3 - Add Comments
 
 > Here is the rewritten function with code comments:
-```c
-char * FUN_801a7490(char *param_1, char param_2) {
-  // Initialize variables
-  char cVar1 = *param_1;
-  char *pcVar2 = (char *)0x0;
-  
-  // Check if the first character is a null terminator
-  if (cVar1 == '\0') {
-    // If it is, set the output pointer to null
-    pcVar2 = (char *)0x0;
-  }
-  else {
-    // If it is not, iterate through the string until a null terminator is found
-    do {
-      // Check if the current character matches the target character
-      if (param_2 == cVar1) {
-        // If it does, set the output pointer to the current position in the string
-        pcVar2 = param_1;
-      }
-      // Increment the input pointer and get the next character
-      param_1 = param_1 + 1;
-      cVar1 = *param_1;
-    } while (cVar1 != '\0');
-  }
-  if (param_2 != '\0') {
-    // If the target character is not a null terminator, set the output pointer to null
-    param_1 = pcVar2;
-  }
-  
-  return param_1;
-}
-```
-The function takes two parameters: `param_1`, which is a pointer to a string, and `param_2`, which is a character. The function searches the string pointed to by `param_1` for the target character specified in `param_2`. If the target character is found, the function sets the output pointer to point to the first occurrence of the target character in the input string. If the target character is not found or if it is a null terminator, the function sets the output pointer to null.
+> ```c
+> char * FUN_801a7490(char *param_1, char param_2) {
+>   // Initialize variables
+>   char cVar1 = *param_1;
+>   char *pcVar2 = (char *)0x0;
+>   
+>   // Check if the first character is a null terminator
+>   if (cVar1 == '\0') {
+>     // If it is, set the output pointer to null
+>     pcVar2 = (char *)0x0;
+>   }
+>   else {
+>     // If it is not, iterate through the string until a null terminator is found
+>     do {
+>       // Check if the current character matches the target character
+>       if (param_2 == cVar1) {
+>         // If it does, set the output pointer to the current position in the string
+>         pcVar2 = param_1;
+>       }
+>       // Increment the input pointer and get the next character
+>       param_1 = param_1 + 1;
+>       cVar1 = *param_1;
+>     } while (cVar1 != '\0');
+>   }
+>   if (param_2 != '\0') {
+>     // If the target character is not a null terminator, set the output pointer to null
+>     param_1 = pcVar2;
+>   }
+>   
+>   return param_1;
+> }
+> ```
+> The function takes two parameters: `param_1`, which is a pointer to a string, and `param_2`, which is a character. The function searches the string pointed to by `param_1` for the target character specified in `param_2`. If the target character is found, the function sets the output pointer to point to the first occurrence of the target character in the input string. If the target character is not found or if it is a null terminator, the function sets the output pointer to null.
 
 ### Option 4 - Rewrite Function
 
 > Sure, I can help you with that. Here is the function rewritten using more descriptive names:
-
-```c
-char *find_substring(char *input_string, char target_character) {
-    // Initialize variables
-    char current_character = '\0';
-    char *substring_start = NULL;
-
-    // Check if input string is not empty and target character is not null
-    if (input_string != NULL && target_character != '\0') {
-        // Iterate through the input string and find the first occurrence of the target character
-        while (*input_string != '\0') {
-            current_character = *input_string;
-            if (current_character == target_character) {
-                substring_start = input_string;
-                break;
-            }
-
-            // Increment the input string pointer
-            input_string++;
-        }
-    }
-
-    // Return the substring start pointer or null if not found
-    return substring_start;
-}
-```
-
-This function takes two parameters: an input string and a target character. The function iterates through the input string and finds the first occurrence of the target character, returning a pointer to the beginning of the substring. If the target character is not found in the input string, the function returns NULL.
+> 
+> ```c
+> char *find_substring(char *input_string, char target_character) {
+>     // Initialize variables
+>     char current_character = '\0';
+>     char *substring_start = NULL;
+> 
+>     // Check if input string is not empty and target character is not null
+>     if (input_string != NULL && target_character != '\0') {
+>         // Iterate through the input string and find the first occurrence of the target character
+>         while (*input_string != '\0') {
+>             current_character = *input_string;
+>             if (current_character == target_character) {
+>                 substring_start = input_string;
+>                 break;
+>             }
+> 
+>             // Increment the input string pointer
+>             input_string++;
+>         }
+>     }
+> 
+>     // Return the substring start pointer or null if not found
+>     return substring_start;
+> }
+> ```
+> 
+> This function takes two parameters: an input string and a target character. The function iterates through the input string and finds the first occurrence of the target character, returning a pointer to the beginning of the substring. If the target character is not found in the input string, the function returns NULL.
 
 ## Instruction Example
 
