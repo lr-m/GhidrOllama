@@ -1,12 +1,20 @@
-# Ollama API Interaction Script for Ghidra
-
 <p align="center">
 
   <img src="https://github.com/luke-r-m/GhidrOllama/assets/47477832/c21b75ab-f186-4a2b-8206-15c1c1d5218b" width="200">
 
 </p>
 
-This script interacts with the Ollama API, which is running on the local machine. It utilizes the Ollama API to perform various tasks such as explaining a C function's purpose and suggesting suitable names for functions. This script is based on the [GptHidra](https://github.com/evyatar9/GptHidra) repository.
+<p align="center">
+  
+  <img src="https://github.com/luke-r-m/GhidrOllama/assets/47477832/59e1b7e2-6331-4968-ac07-4b5ceded673b" width="400">
+
+</p>
+
+**Ollama API interaction Ghidra script for LLM-assisted reverse-engineering.**
+
+# GhidrOllama
+
+This script interacts with the Ollama API hosted locally to interact with LLM's. It utilizes the Ollama API to perform various tasks such as explaining a C function's purpose, suggesting suitable names for functions, adding comments, explaining instructions, and answering questions without leaving Ghidra. This script is inspired by [GptHidra](https://github.com/evyatar9/GptHidra).
 
 ## Prerequisites
 
@@ -82,8 +90,8 @@ The purpose of this function is not immediately clear from its name or parameter
 
 > The function FUN_801a7490 takes two parameters, `char *param_1` and `char param_2`.
 Based on the functionality of this function, I would suggest the following names for the parameters:
-* `char *param_1`: This parameter represents a string, and it is used as an input to the function. I would suggest naming it `input_string`.
-* `char param_2`: This parameter represents a single character, and it is used as an input to the function. I would suggest naming it `search_character`.
+> * `char *param_1`: This parameter represents a string, and it is used as an input to the function. I would suggest naming it `input_string`.
+> * `char param_2`: This parameter represents a single character, and it is used as an input to the function. I would suggest naming it `search_character`.
 As for the name of the function itself, I would suggest `strchr` (short for "string character"). This name reflects the functionality of the function, which is to search for a specific character in a string and return its position.
 
 ### Option 3 - Add Comments
