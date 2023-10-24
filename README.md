@@ -22,6 +22,17 @@ This script interacts with the Ollama API hosted locally to interact with LLM's.
 - [Ollama](https://github.com/jmorganca/ollama)
 - [Any of the Ollama models](https://ollama.ai/library)
 
+### Ollama Setup
+
+Feel free to replace `codellama:7b` with any model from the collection of [Ollama Models](https://ollama.ai/library)
+
+```
+curl https://ollama.ai/install.sh | sh
+ollama run codellama:7b
+```
+
+Now you should have a docker container running that is hosting the API
+
 ## Usage
 
 1. Place the script in the Ghidra script directory or create a new script in the Script Manager window and copy the contents of *GhidrOllama.py*.
