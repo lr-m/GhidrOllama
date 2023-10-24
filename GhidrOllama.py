@@ -173,6 +173,12 @@ def identifySecurityVulnerabilities(model, c_code):
     return interactWithOllamaAPI(model, prompt, c_code)
 
 
+# Function to suggest selected function name using the Ollama API
+def suggestFunctionNameWithSuggestions(model, c_code, suggestions):
+    prompt = "If you had written the following C code, what would you name this function and parameters based on its functionality/behaviour? Completely disregard the function name and also the names of any functions called within. There is a good chance that it is one of the following functions \"" + suggestions + " \". Make 100% sure you suggest a possible function name, and also names for the function parameters!\n\n"
+    return interactWithOllamaAPI(model, prompt, c_code)
+
+
 def main():
     # Call the function to fetch and print the model list
     model = select_model()
@@ -229,8 +235,7 @@ def main():
 			    print
 			    c_code = getDecompiledFunctionAtAddress(toAddr(leaf.to_list()[0]))
 
-                            explanation, stats_summary = suggestFunctionName(model, c_code)
-			
+                            explanation, stats_summary = suggestFunctionNameWithSuggestions(model, c_code, leaf.to_list()[4])
 		    except Exception as e:
 			print(e)
 			print('Missing LeafBlowerLeafFunctions script!')
