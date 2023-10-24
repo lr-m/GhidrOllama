@@ -35,21 +35,23 @@ Now you should have a docker container running that is hosting the API
 
 ## Usage
 
-1. Place the script in the Ghidra script directory or create a new script in the Script Manager window and copy the contents of *GhidrOllama.py*.
-2. Find a function you want to feed to the LLM
-3. Run the script from the Script Manager
+1. Place the *GhidrOllama.py* script and the *ghidrollama_utils* directory in your Ghidra script directory (usually `~/ghidra_scripts`).
+2. Find a function/instruction you want to feed to the LLM
+3. Run the script from the Script Manager window
 4. Select the model you want to use
-5. Select how you want to function to be analysed
+5. Select how you want to function/instruction to be analysed
 6. Wait until the output is printed to the console (wait time varies depending on model and specifications of host)
 
 ## Functionality
 
-- Can explain the function that is currently in the decompiler window
-- Can suggest a name for the function and its arguments
-- Can rewrite the function with recommended comments
-- Can completely rewrite the function, trying to improve function/parameter/variable names and also add comments
-- Can explain the currently selected instruction in the listing window
-- Also allows entry of any text prompt
+1. Can explain the function that is currently in the decompiler window
+2. Can suggest a name for the current function and its arguments
+3. Can rewrite the current function with recommended comments
+4. Can completely rewrite the current function, trying to improve function/parameter/variable names and also add comments
+5. Can explain the currently selected instruction in the listing window
+6. Uses a modified version of this [LeafBlowerLeafFunctions.py Ghidra Script](https://github.com/grayhatacademy/ghidra_scripts) to automate analysis of potential 'leaf' functions such as *strcpy*, *memcpy*, *strlen*, etc in binaries with stripped symbols
+7. Tries to find bugs/suggest potential vulnerabilities in current function (more just to make sure you've covered everything, some suggestions are dumb as it doesn't have the context)
+8. Also allows entry of any text prompt for general asking of questions (rather than having to Google, good for simple stuff)
 
 ## Notes
 
@@ -198,5 +200,9 @@ This script is provided as a sample and may require modifications to fit specifi
 
 ## Credits
 
-This script is inspired by the [GptHidra](https://github.com/evyatar9/GptHidra) repository. Special thanks to the contributors of the GptHidra project for their initial work.
+This script is inspired by the [GptHidra](https://github.com/evyatar9/GptHidra) repository. 
+
+This script also uses a slightly modified version of one of [these Ghidra scripts](https://github.com/grayhatacademy/ghidra_scripts).
+
+Many thanks to the contributors of these projects for their initial work.
 
