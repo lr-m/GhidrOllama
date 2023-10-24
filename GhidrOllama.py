@@ -3,10 +3,13 @@
 
 import urllib2
 import json
+import sys
+import re
+from ghidrollama_utils import leafblower
 from ghidra.util.task import TaskMonitor
 from ghidra.util.task import ConsoleTaskMonitor
-import sys
 from ghidra.app.decompiler import DecompInterface
+from ghidra.app.script import GhidraScript
 
 
 # General function to interact with the Ollama API
@@ -65,6 +68,29 @@ def getCurrentDecompiledFunction():
     # Get the current address and the function containing it
     currentAddress = currentLocation.getAddress()
     function = getFunctionContaining(currentAddress)
+
+    if function is None:
+        raise ValueError("No function is currently selected.")
+
+    # Decompile the function and get the resulting C code
+    try:
+        return decompiler.decompileFunction(function, 30, monitor).getDecompiledFunction().getC()
+    except Exception as e:
+        raise ValueError("Unable to decompile function: {}".format(e))
+
+
+def getDecompiledFunctionAtAddress(address):
+    # Create a TaskMonitor object
+    monitor = TaskMonitor.DUMMY
+
+    # Create a DecompInterface object
+    decompiler = DecompInterface()
+
+    # Set the current program for the decompiler
+    decompiler.openProgram(currentProgram)
+
+    # Get the current address and the function containing it
+    function = getFunctionContaining(address)
 
     if function is None:
         raise ValueError("No function is currently selected.")
@@ -141,6 +167,12 @@ def suggestFunctionName(model, c_code):
     return interactWithOllamaAPI(model, prompt, c_code)
 
 
+# Function to identify potential bugs using the Ollama API
+def identifySecurityVulnerabilities(model, c_code):
+    prompt = "Describe all vulnerabilities in this function with as much detail as possible, also produce a checklist of things to check that could potentially cause security vulnerabilities and memory corruptions.\n\n"
+    return interactWithOllamaAPI(model, prompt, c_code)
+
+
 def main():
     # Call the function to fetch and print the model list
     model = select_model()
@@ -148,12 +180,12 @@ def main():
     monitor.setMessage("Waiting for user input...")
 
     # Getting user input for the option
-    options = ['1 - Explain the current function', '2 - Suggest a suitable name for the current function', '3 - Suggest function comments', '4 - Rewrite function to be descriptive', '5 - Explain selected instruction',  '6 - Enter general prompt']
+    options = ['1 - Explain the current function', '2 - Suggest a suitable name for the current function', '3 - Suggest function comments', '4 - Rewrite function to be descriptive', '5 - Explain selected instruction',  '6 - Locate + identify leafblower functions', '7 - Try and find bugs in the current function', '8 - Enter general prompt']
     try:
         # Prompt the user to select one of the installed models
         choice = askChoice("Choice", "Pick what you want to ask the model", options, "Question Selection")
         option = int(choice.split(' ')[0])
-        if option not in [1, 2, 3, 4, 5, 6]:
+        if option not in [1, 2, 3, 4, 5, 6, 7, 8]:
             print("Invalid option. Please select a valid option.")
         else:
             stats_summary = None
@@ -177,7 +209,35 @@ def main():
                         explanation, stats_summary = explainInstruction(model, c_code)
 		    else:
 			print("No instruction selected!")
-                elif option == 6:
+		elif option == 6:
+		    # Run the leafblower script
+		    # Replace the script name and arguments as per your requirement
+                    script_name = "LeafBlowerLeafFunctions.py"
+
+		    try:
+                        # Create a ScriptTask and run the script
+                        print 'Searching for potential POSIX leaf functions...'
+                        leaf_finder = leafblower.LeafFunctionFinder(currentProgram)
+                        leaf_finder.find_leaves()
+                        leaf_finder.display()
+			
+			for leaf in leaf_finder.get_leaves():
+			    print("\n\n> Analysing function at address: " + leaf.to_list()[0])
+			    print('|'),
+			    for elem in leaf.to_list():
+				print(elem + ' |'),
+			    print
+			    c_code = getDecompiledFunctionAtAddress(toAddr(leaf.to_list()[0]))
+
+                            explanation, stats_summary = suggestFunctionName(model, c_code)
+			
+		    except Exception as e:
+			print(e)
+			print('Missing LeafBlowerLeafFunctions script!')
+		elif option == 7:
+                    c_code = getCurrentDecompiledFunction()
+                    explanation, stats_summary = identifySecurityVulnerabilities(model, c_code)
+                elif option == 8:
                     prompt = askString("GhidrOllama", "Enter your prompt:")
                     explanation, stats_summary = interactWithOllamaAPI(model, prompt, '')
                 
