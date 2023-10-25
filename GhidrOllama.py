@@ -175,7 +175,7 @@ def identifySecurityVulnerabilities(model, c_code):
 
 # Function to suggest selected function name using the Ollama API
 def suggestFunctionNameWithSuggestions(model, c_code, suggestions):
-    prompt = "If you had written the following C code, what would you name this function and parameters based on its functionality/behaviour? Completely disregard the function name and also the names of any functions called within. There is a good chance that it is one of the following functions \"" + suggestions + " \". Make 100% sure you suggest a possible function name, and also names for the function parameters!\n\n"
+    prompt = "If you had written the following C code, what would you name this function and parameters based on its functionality/behaviour? Completely disregard the function name and also the names of any functions called within. There is a good chance that it is one of the following functions \"" + suggestions + " \". It is absolutely essential that you must 100% suggest a function name!\n\n"
     return interactWithOllamaAPI(model, prompt, c_code)
 
 
