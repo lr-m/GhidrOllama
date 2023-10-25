@@ -30,7 +30,7 @@ def interactWithOllamaAPI(model, prompt, c_code):
     stats_summary = {}
     built_line = ""
 
-    monitor.setMessage("Recieving response...")
+    monitor.setMessage("Receiving response...")
 
     while True:
         character = response.read(1)
@@ -114,7 +114,7 @@ def select_model():
         for model in data['models']:
 	    model_names.append(model['name'])
 
-        choice = askChoice("Choice", "Please choose the model you want to use", model_names, "Model Selection")
+        choice = askChoice("GhidrOllama", "Please choose the model you want to use:", model_names, "Model Selection")
         print("Selected model: " + choice)
 
     except urllib2.HTTPError as e:
@@ -179,19 +179,38 @@ def suggestFunctionNameWithSuggestions(model, c_code, suggestions):
     return interactWithOllamaAPI(model, prompt, c_code)
 
 
+# Function to ask a question about the passed c code
+def askQuestionAboutFunction(model, question, c_code):
+    prompt = 'I have a question about the following function. \n' + question + '\nHere is the function:\n\n'
+    return interactWithOllamaAPI(model, prompt, c_code)
+
+
 def main():
+    monitor.setMessage("Waiting for model select...")
+
     # Call the function to fetch and print the model list
     model = select_model()
 
-    monitor.setMessage("Waiting for user input...")
+    monitor.setMessage("Waiting for function select...")
 
     # Getting user input for the option
-    options = ['1 - Explain the current function', '2 - Suggest a suitable name for the current function', '3 - Suggest function comments', '4 - Rewrite function to be descriptive', '5 - Explain selected instruction',  '6 - Locate + identify leafblower functions', '7 - Try and find bugs in the current function', '8 - Enter general prompt']
+    options = [
+	'1 - Explain the current function', 
+	'2 - Suggest a suitable name for the current function', 
+	'3 - Suggest function comments', 
+	'4 - Rewrite function to be descriptive', 
+	'5 - Ask question about current function', 
+	'6 - Try and find bugs in the current function', 
+	'7 - Explain selected instruction',  
+	'8 - Locate + identify leafblower functions', 
+	'9 - Enter general prompt'
+    ]
+
     try:
-        # Prompt the user to select one of the installed models
-        choice = askChoice("Choice", "Pick what you want to ask the model", options, "Question Selection")
+        # Prompt the user to select one of the available functions
+        choice = askChoice("GhidrOllama", "What you want to ask the " + model + " model:", options, "Question Selection")
         option = int(choice.split(' ')[0])
-        if option not in [1, 2, 3, 4, 5, 6, 7, 8]:
+        if option not in [1, 2, 3, 4, 5, 6, 7, 8, 9]:
             print("Invalid option. Please select a valid option.")
         else:
             stats_summary = None
@@ -210,16 +229,19 @@ def main():
                     c_code = getCurrentDecompiledFunction()
                     explanation, stats_summary = tidyUpFunction(model, c_code)
 		elif option == 5:
+                    c_code = getCurrentDecompiledFunction()
+		    question = askString("GhidrOllama", "What do you want to ask about the function?")
+                    explanation, stats_summary = askQuestionAboutFunction(model, question, c_code)
+		elif option == 6:
+                    c_code = getCurrentDecompiledFunction()
+                    explanation, stats_summary = identifySecurityVulnerabilities(model, c_code)
+		elif option == 7:
                     c_code = getSelectedInstruction()
 		    if c_code is not None:
                         explanation, stats_summary = explainInstruction(model, c_code)
 		    else:
 			print("No instruction selected!")
-		elif option == 6:
-		    # Run the leafblower script
-		    # Replace the script name and arguments as per your requirement
-                    script_name = "LeafBlowerLeafFunctions.py"
-
+		elif option == 8:
 		    try:
                         # Create a ScriptTask and run the script
                         print 'Searching for potential POSIX leaf functions...'
@@ -237,12 +259,8 @@ def main():
 
                             explanation, stats_summary = suggestFunctionNameWithSuggestions(model, c_code, leaf.to_list()[4])
 		    except Exception as e:
-			print(e)
 			print('Missing LeafBlowerLeafFunctions script!')
-		elif option == 7:
-                    c_code = getCurrentDecompiledFunction()
-                    explanation, stats_summary = identifySecurityVulnerabilities(model, c_code)
-                elif option == 8:
+                elif option == 9:
                     prompt = askString("GhidrOllama", "Enter your prompt:")
                     explanation, stats_summary = interactWithOllamaAPI(model, prompt, '')
                 
@@ -254,7 +272,7 @@ def main():
             except ValueError as e:
                 print(e)
     except ValueError:
-        print("Invalid option. Please enter a number.")
+        print("Invalid option.")
     except KeyboardInterrupt:
         print("\nTerminating the script.")
     print ''
