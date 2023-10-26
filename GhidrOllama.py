@@ -1,5 +1,4 @@
 # Script for interacting with Ollama API running on local machine
-# Used https://github.com/evyatar9/GptHidra as a starting point
 
 import urllib2
 import json
@@ -10,6 +9,32 @@ from ghidra.util.task import TaskMonitor
 from ghidra.util.task import ConsoleTaskMonitor
 from ghidra.app.decompiler import DecompInterface
 from ghidra.app.script import GhidraScript
+
+
+# Print ASCII art Llama (essential)
+def printLlama():
+    print
+    print("\
+     .#.    .#.            \n\
+     .##.   .##.        ~\n\
+     .#+++++++#.    ~   ~  ~\n\
+   .###.Ghidr .#.     ~    ~\n\
+    .##.Ollama.#.    ~   ~\n\
+     .#+++++++#.  .^ ^  ~  ~\n\
+       #11001-#  ^-.^'.^ ~ ^\n\
+      #11100-#   ^.'^.'^- ^.^\n\
+     #01011-#  -^.^^-.^-^'.^\n\
+    #10110--#  ^^..^.^-.^\n\
+   #10101--#--^--^--^.'^\n\
+   #-------#---^--^--^-#~\n\
+   #-------------------#~~\n\
+   .#-----------------#.\n\
+    .#---------------#.\n\
+     #--------------#.\n\
+     #---#--##---#--#\n\
+     #---#--##---#--#\n\
+     #__# #_##__# #_#\n")
+
 
 
 # General function to interact with the Ollama API
@@ -41,7 +66,7 @@ def interactWithOllamaAPI(model, prompt, c_code):
                 raise ValueError(response_data["error"])
             if "response" in response_data:
                 response_text += response_data["response"]
-		printf(response_data["response"]),
+		printf(response_data["response"].replace('%', '\%')),
             if response_data["done"]:
                 stats_summary = {
                     "total_duration": str(int(response_data["total_duration"]) / 1000000000) + 's'
@@ -186,6 +211,7 @@ def askQuestionAboutFunction(model, question, c_code):
 
 
 def main():
+    printLlama()
     monitor.setMessage("Waiting for model select...")
 
     # Call the function to fetch and print the model list
