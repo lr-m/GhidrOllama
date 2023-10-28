@@ -48,10 +48,12 @@ Now you should have a docker container running that is hosting the API
 2. Can suggest a name for the current function and its arguments
 3. Can rewrite the current function with recommended comments
 4. Can completely rewrite the current function, trying to improve function/parameter/variable names and also add comments
-5. Can explain the currently selected instruction in the listing window
-6. Uses a modified version of this [LeafBlowerLeafFunctions.py Ghidra Script](https://github.com/grayhatacademy/ghidra_scripts) to automate analysis of potential 'leaf' functions such as *strcpy*, *memcpy*, *strlen*, etc in binaries with stripped symbols
-7. Tries to find bugs/suggest potential vulnerabilities in current function (more just to make sure you've covered everything, some suggestions are dumb as it doesn't have the context)
-8. Also allows entry of any text prompt for general asking of questions (rather than having to Google, good for simple stuff)
+5. Can ask a question about a function
+6. Tries to find bugs/suggest potential vulnerabilities in current function (more just to make sure you've covered everything, some suggestions are dumb as it doesn't have the context)
+7. Uses a modified version of this [LeafBlowerLeafFunctions.py Ghidra Script](https://github.com/grayhatacademy/ghidra_scripts) to automate analysis of potential 'leaf' functions such as *strcpy*, *memcpy*, *strlen*, etc in binaries with stripped symbols
+8. Can explain the single assembly instruction that is currently selected in the listing window
+9. Can explain multiple assembly instructions that are currently selected in the listing window
+10. Also allows entry of any text prompt for general asking of questions (rather than having to Google, good for simple stuff)
 
 ## Notes
 
