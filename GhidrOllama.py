@@ -66,7 +66,7 @@ def interactWithOllamaAPI(model, prompt, c_code):
                 raise ValueError(response_data["error"])
             if "response" in response_data:
                 response_text += response_data["response"]
-		printf(response_data["response"].replace('%', '\%')),
+		printf('%s', response_data["response"]),
             if response_data["done"]:
                 stats_summary = {
                     "total_duration": str(int(response_data["total_duration"]) / 1000000000) + 's'
@@ -161,15 +161,30 @@ def getSelectedInstruction():
     return None
 
 
+# Gets the selected assembly as a string
+def getSelectedAssembly():
+    instructions = ""
+    listing = currentProgram.getListing()
+    if currentSelection is not None:
+        for address in currentSelection.getAddresses(True):
+            instruction = listing.getInstructionAt(address)
+            if instruction:
+                instructions += '0x' + address.toString() + ': ' + instruction.toString() + '\n'
+	return instructions
+    else:
+        print("No current selection.")
+        return None
+
+
 # Function to explain the selected function using the Ollama API
 def explainFunction(model, c_code):
     prompt = "Can you briefly summarise what the following function does/what its purpose is? Try and explain in a few sentences.\n\n"
     return interactWithOllamaAPI(model, prompt, c_code)
 
 
-# Function to rewrite the function with descriptive names and comments using the Ollama API
-def tidyUpFunction(model, c_code):
-    prompt = "The function name, local variables, and parameters are not named very well. Can you take a look at the function and replace the less-descriptive original names of function/arguments/local variables with more descriptive names that indicate its purpose? Please also add useful code comments, I want to see the full function rewritten using the more descriptive replacements. Other than the name changes and comments, the function must remain identical.\n\n"
+# Function to suggest selected function name using the Ollama API
+def suggestFunctionName(model, c_code):
+    prompt = "If you had written the following C code, what would you name this function and parameters based on its functionality/behaviour? Completely disregard the function name and also the names of any functions called within. Make 100% sure you suggest a possible function name, and also names for the function parameters!\n\n"
     return interactWithOllamaAPI(model, prompt, c_code)
 
 
@@ -179,16 +194,9 @@ def addFunctionComments(model, c_code):
     return interactWithOllamaAPI(model, prompt, c_code)
 
 
-# Function to explain the selected instruction using the Ollama API
-def explainInstruction(model, c_code):
-    architecture_name = currentProgram.getLanguage().getProcessor().toString()
-    prompt = "Can you briefly explain the following instruction? The architecture is " + architecture_name + ". Can you also show the instruction format?\n\n"
-    return interactWithOllamaAPI(model, prompt, c_code)
-
-
-# Function to suggest selected function name using the Ollama API
-def suggestFunctionName(model, c_code):
-    prompt = "If you had written the following C code, what would you name this function and parameters based on its functionality/behaviour? Completely disregard the function name and also the names of any functions called within. Make 100% sure you suggest a possible function name, and also names for the function parameters!\n\n"
+# Function to rewrite the function with descriptive names and comments using the Ollama API
+def tidyUpFunction(model, c_code):
+    prompt = "The function name, local variables, and parameters are not named very well. Can you take a look at the function and replace the less-descriptive original names of function/arguments/local variables with more descriptive names that indicate its purpose? Please also add useful code comments, I want to see the full function rewritten using the more descriptive replacements. Other than the name changes and comments, the function must remain identical.\n\n"
     return interactWithOllamaAPI(model, prompt, c_code)
 
 
@@ -210,6 +218,20 @@ def askQuestionAboutFunction(model, question, c_code):
     return interactWithOllamaAPI(model, prompt, c_code)
 
 
+# Function to explain the selected instruction using the Ollama API
+def explainInstruction(model, instruction):
+    architecture_name = currentProgram.getLanguage().getProcessor().toString()
+    prompt = "Can you briefly explain the following instruction? The architecture is " + architecture_name + ". Can you also show the instruction format?\n\n"
+    return interactWithOllamaAPI(model, prompt, instruction)
+
+
+# Function to explain selected assembly using the Ollama API
+def explainAssembly(model, assembly):
+    architecture_name = currentProgram.getLanguage().getProcessor().toString()
+    prompt = "Can you explain the following " + architecture_name + " assembly.\n\n"
+    return interactWithOllamaAPI(model, prompt, assembly)
+
+
 def main():
     printLlama()
     monitor.setMessage("Waiting for model select...")
@@ -227,16 +249,17 @@ def main():
 	'4 - Rewrite function to be descriptive', 
 	'5 - Ask question about current function', 
 	'6 - Try and find bugs in the current function', 
-	'7 - Explain selected instruction',  
-	'8 - Locate + identify leafblower functions', 
-	'9 - Enter general prompt'
+	'7 - Locate + identify leafblower functions', 
+	'8 - Explain selected instruction',  
+	'9 - Explain selected assembly',
+	'10 - Enter general prompt'
     ]
 
     try:
         # Prompt the user to select one of the available functions
         choice = askChoice("GhidrOllama", "What you want to ask the " + model + " model:", options, "Question Selection")
         option = int(choice.split(' ')[0])
-        if option not in [1, 2, 3, 4, 5, 6, 7, 8, 9]:
+        if option not in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
             print("Invalid option. Please select a valid option.")
         else:
             stats_summary = None
@@ -262,12 +285,6 @@ def main():
                     c_code = getCurrentDecompiledFunction()
                     explanation, stats_summary = identifySecurityVulnerabilities(model, c_code)
 		elif option == 7:
-                    c_code = getSelectedInstruction()
-		    if c_code is not None:
-                        explanation, stats_summary = explainInstruction(model, c_code)
-		    else:
-			print("No instruction selected!")
-		elif option == 8:
 		    try:
                         # Create a ScriptTask and run the script
                         print 'Searching for potential POSIX leaf functions...'
@@ -285,8 +302,20 @@ def main():
 
                             explanation, stats_summary = suggestFunctionNameWithSuggestions(model, c_code, leaf.to_list()[4])
 		    except Exception as e:
-			print('Missing LeafBlowerLeafFunctions script!')
-                elif option == 9:
+			print('Error: ' + e)
+		elif option == 8:
+                    c_code = getSelectedInstruction()
+		    if c_code is not None:
+                        explanation, stats_summary = explainInstruction(model, c_code)
+		    else:
+			print("No instruction selected!")
+		elif option == 9:
+		    c_code = getSelectedAssembly()
+		    if c_code is not None:
+                        explanation, stats_summary = explainAssembly(model, c_code)
+		    else:
+			print("No assembly selected!")
+                elif option == 10:
                     prompt = askString("GhidrOllama", "Enter your prompt:")
                     explanation, stats_summary = interactWithOllamaAPI(model, prompt, '')
                 
