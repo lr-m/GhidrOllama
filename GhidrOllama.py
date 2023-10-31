@@ -1,4 +1,9 @@
 # Script for interacting with Ollama API running on local machine
+# @author luke-r-m
+# @category LLM-Assisted RE
+# @keybinding q
+# @menupath
+# @toolbar
 
 import urllib2
 import json
