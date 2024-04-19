@@ -1,5 +1,5 @@
 # Script for interacting with Ollama API running on local machine
-# @author luke-r-m
+# @author lr-m
 # @category LLM-Assisted RE
 # @keybinding q
 # @menupath
@@ -14,6 +14,7 @@ from ghidra.util.task import TaskMonitor
 from ghidra.util.task import ConsoleTaskMonitor
 from ghidra.app.decompiler import DecompInterface
 from ghidra.app.script import GhidraScript
+from ghidra.program.model.listing import CodeUnit
 
 
 # Print ASCII art Llama (essential)
@@ -237,6 +238,32 @@ def explainAssembly(model, assembly):
     return interactWithOllamaAPI(model, prompt, assembly)
 
 
+# Function to set the comment of the current function
+def addCommentToCurrentFunction(comment):
+    currentFunction = getFunctionContaining(currentAddress)
+    currentFunction.setComment(comment)
+
+def addCommentToFunction(address, comment):
+    currentFunction = getFunctionContaining(address)
+    currentFunction.setComment(comment)
+   
+
+def addCommentToCurrentInstruction(comment_text):
+    # Get the current program
+    program = getCurrentProgram()
+    
+    # Get the instruction at the current address
+    instruction = program.getListing().getInstructionAt(currentAddress)
+    
+    # Check if an instruction is found at the current address
+    if instruction is not None:
+        # Add the comment to the instruction
+        program.getListing().setComment(instruction.getAddress(), CodeUnit.PLATE_COMMENT, comment_text)
+        print("Comment added to the instruction at address:", instruction.getAddress())
+    else:
+        print("No instruction found at the current address.")
+
+
 def main():
     printLlama()
     monitor.setMessage("Waiting for model select...")
@@ -273,9 +300,11 @@ def main():
                 if option == 1:
                     c_code = getCurrentDecompiledFunction()
                     explanation, stats_summary = explainFunction(model, c_code)
+		    addCommentToCurrentFunction(explanation)
                 elif option == 2:
                     c_code = getCurrentDecompiledFunction()
                     explanation, stats_summary = suggestFunctionName(model, c_code)
+		    addCommentToCurrentFunction(explanation)
 		elif option == 3:
                     c_code = getCurrentDecompiledFunction()
                     explanation, stats_summary = addFunctionComments(model, c_code)
@@ -306,12 +335,14 @@ def main():
 			    c_code = getDecompiledFunctionAtAddress(toAddr(leaf.to_list()[0]))
 
                             explanation, stats_summary = suggestFunctionNameWithSuggestions(model, c_code, leaf.to_list()[4])
+			    addCommentToFunction(toAddr(leaf.to_list()[0]), explanation)
 		    except Exception as e:
 			print('Error: ' + e)
 		elif option == 8:
                     c_code = getSelectedInstruction()
 		    if c_code is not None:
                         explanation, stats_summary = explainInstruction(model, c_code)
+			addCommentToCurrentInstruction(explanation)
 		    else:
 			print("No instruction selected!")
 		elif option == 9:
@@ -323,7 +354,7 @@ def main():
                 elif option == 10:
                     prompt = askString("GhidrOllama", "Enter your prompt:")
                     explanation, stats_summary = interactWithOllamaAPI(model, prompt, '')
-                
+
 		# Print stats summary
                 if stats_summary is not None:
                     print("\n\n>> Stats Summary:")
