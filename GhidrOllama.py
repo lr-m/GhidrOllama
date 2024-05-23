@@ -33,6 +33,9 @@ class Config:
             self.port = self.config["port"]
             self.model = self.config["model"]
             self.scheme = self.config["scheme"]
+            # Whether LLM output should be saved as comments.
+            # Default is False because output is unreliable and may not be useful.
+            self.set_comments = self.config["set_comments"] 
             # This can be used to feed the model additional domain knowledge, like 
             # "assume assembly is in ARM Thumb v2", or 
             # "This is from an 802.11 network appliance. Identify matching magic values 
@@ -47,8 +50,6 @@ class Config:
             print("Warning: first_run key not found in config file. Assuming first run.")
             self.first_run = True
             self.config["first_run"] = self.first_run
-
-        self.url = "{}://{}:{}".format(self.scheme, self.host, self.port)
 
 
     @staticmethod
@@ -122,7 +123,7 @@ class Config:
        
         c = self.config
         try:
-            if c["host"] == None or c["port"] == None or c["model"] == None or c["scheme"] == None or c["first_run"] == None:
+            if c["host"] == None or c["port"] == None or c["model"] == None or c["scheme"] == None or c["first_run"] == None or c["set_comments"] == None:
                 return False
         except KeyError as e:
             print("Error: Missing key in config file: {}".format(e))
@@ -209,6 +210,11 @@ class Config:
         except CancelledException:
             return False
 
+        try:
+            set_comments = askYesNo("Set Comments", "Would you like query responses to be stored as function comments?")
+        except CancelledException:
+            return False
+
         self.config["model"] = model
         self.model = model
         self.config["host"] = host
@@ -217,12 +223,15 @@ class Config:
         self.port = port
         self.config["scheme"] = scheme
         self.scheme = scheme
-        self.config["first_run"] = False
         self.project_prompt = prompt
         self.config["project_prompt"] = prompt
+        self.set_comments = set_comments
+        self.config["set_comments"] = set_comments 
         self.first_run = False
+        self.config["first_run"] = False
 
         if not self.valid():
+            print("Error: configuration failed to validate, please try again.")
             return False
 
         self.save()
@@ -261,7 +270,8 @@ class Config:
         if endpoint[0] == "/":
             endpoint = endpoint[1:]
 
-        return "{}/{}".format(self.url, endpoint)
+        url = "{}://{}:{}".format(self.scheme, self.host, self.port)
+        return "{}/{}".format(url, endpoint)
 
 
 CONFIG = Config()
@@ -298,10 +308,9 @@ def interactWithOllamaAPI(model, prompt, c_code):
     monitor.setMessage("Model " + model + " is processing input...")
     print("\n>> Explanation:")
     url = CONFIG.get_endpoint("/api/generate")
-    print(url)
     data = {
         "model": model,
-        "prompt": prompt + c_code
+        "prompt": CONFIG.project_prompt + "\n\n" + prompt + c_code
     }
     data = json.dumps(data)
 
@@ -468,15 +477,24 @@ def explainAssembly(model, assembly):
 
 # Function to set the comment of the current function
 def addCommentToCurrentFunction(comment):
+    if not CONFIG.set_comments:
+        return
+
     currentFunction = getFunctionContaining(currentAddress)
     currentFunction.setComment(comment)
 
 def addCommentToFunction(address, comment):
+    if not CONFIG.set_comments:
+        return
+
     currentFunction = getFunctionContaining(address)
     currentFunction.setComment(comment)
    
 
 def addCommentToCurrentInstruction(comment_text):
+    if not CONFIG.set_comments:
+        return
+
     # Get the current program
     program = getCurrentProgram()
     
