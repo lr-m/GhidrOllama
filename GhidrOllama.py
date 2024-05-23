@@ -33,14 +33,20 @@ class Config:
             self.port = self.config["port"]
             self.model = self.config["model"]
             self.scheme = self.config["scheme"]
+            # This can be used to feed the model additional domain knowledge, like 
+            # "assume assembly is in ARM Thumb v2", or 
+            # "This is from an 802.11 network appliance. Identify matching magic values 
+            # and field sizes for the protocol and provide descriptive names."
+            self.project_prompt = self.config["project_prompt"]
         except KeyError as e:
             raise RuntimeError("Error loading configuration: missing key {}".format(e))
 
         try:
-            self.first_run = self.config["firstrun"]
+            self.first_run = self.config["first_run"]
         except:
-            self.first_run = False
-            self.config["firstrun"] = self.first_run
+            print("Warning: first_run key not found in config file. Assuming first run.")
+            self.first_run = True
+            self.config["first_run"] = self.first_run
 
         self.url = "{}://{}:{}".format(self.scheme, self.host, self.port)
 
@@ -116,7 +122,7 @@ class Config:
        
         c = self.config
         try:
-            if c["host"] == None or c["port"] == None or c["model"] == None or c["scheme"] == None or c["firstrun"] == None:
+            if c["host"] == None or c["port"] == None or c["model"] == None or c["scheme"] == None or c["first_run"] == None:
                 return False
         except KeyError as e:
             print("Error: Missing key in config file: {}".format(e))
@@ -194,6 +200,15 @@ class Config:
         if model == None:
             return False
 
+        # Get project-specific prompt/context if desired.
+        monitor.setMessage("Waiting for project-specific prompt...")
+        try:
+            prompt = askString("Project Prompt", "Please enter a project-specific prompt to prepend to all queries, or leave blank (space):", " ")
+            if prompt == None or prompt == " ":
+                prompt = ""
+        except CancelledException:
+            return False
+
         self.config["model"] = model
         self.model = model
         self.config["host"] = host
@@ -202,7 +217,9 @@ class Config:
         self.port = port
         self.config["scheme"] = scheme
         self.scheme = scheme
-        self.config["firstrun"] = False
+        self.config["first_run"] = False
+        self.project_prompt = prompt
+        self.config["project_prompt"] = prompt
         self.first_run = False
 
         if not self.valid():
@@ -484,8 +501,6 @@ def main():
         if not success:
             print("Configuration aborted, exiting...")
             return
-    else:
-        print("Not the first run")
 
     model = CONFIG.model
     monitor.setMessage("Waiting for function select...")
