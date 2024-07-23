@@ -1,4 +1,4 @@
-# Script for interacting with Ollama API running on local machine
+# Script for interacting with Ollama API to aid with RE/VR
 # @author lr-m
 # @category LLM-Assisted RE
 # @keybinding q
@@ -17,6 +17,7 @@ from ghidra.app.decompiler import DecompInterface
 from ghidra.app.script import GhidraScript
 from ghidra.program.model.listing import CodeUnit
 from ghidra.util.exception import CancelledException
+from ghidra.program.model.symbol import SourceType
 
 
 class Config:
@@ -41,6 +42,10 @@ class Config:
             # "This is from an 802.11 network appliance. Identify matching magic values 
             # and field sizes for the protocol and provide descriptive names."
             self.project_prompt = self.config["project_prompt"]
+            # This tells GhidrOllama if it should try and automatically rename functions
+            # WARNING: If the model messes up, the function name will be set to the first
+            # word of the response, no matter what it is
+            self.auto_rename = self.config["auto_rename"]
         except KeyError as e:
             raise RuntimeError("Error loading configuration: missing key {}".format(e))
 
@@ -123,7 +128,7 @@ class Config:
        
         c = self.config
         try:
-            if c["host"] == None or c["port"] == None or c["model"] == None or c["scheme"] == None or c["first_run"] == None or c["set_comments"] == None:
+            if c["host"] == None or c["port"] == None or c["model"] == None or c["scheme"] == None or c["first_run"] == None or c["set_comments"] == None or c["auto_rename"] == None:
                 return False
         except KeyError as e:
             print("Error: Missing key in config file: {}".format(e))
@@ -214,6 +219,11 @@ class Config:
             set_comments = askYesNo("Set Comments", "Would you like query responses to be stored as function comments?")
         except CancelledException:
             return False
+            
+        try:
+            auto_rename = askYesNo("Auto Renaming", "Would you like GhidrOllama to try and automatically rename functions based on responses?")
+        except CancelledException:
+            return False
 
         self.config["model"] = model
         self.model = model
@@ -227,6 +237,8 @@ class Config:
         self.config["project_prompt"] = prompt
         self.set_comments = set_comments
         self.config["set_comments"] = set_comments 
+        self.auto_rename = auto_rename
+        self.config["auto_rename"] = auto_rename
         self.first_run = False
         self.config["first_run"] = False
 
@@ -304,14 +316,22 @@ def printLlama():
 
 
 # General function to interact with the Ollama API
-def interactWithOllamaAPI(model, prompt, c_code):
+def interactWithOllamaAPI(model, system_prompt, prompt, c_code):
     monitor.setMessage("Model " + model + " is processing input...")
     print("\n>> Explanation:")
     url = CONFIG.get_endpoint("/api/generate")
-    data = {
-        "model": model,
-        "prompt": CONFIG.project_prompt + "\n\n" + prompt + c_code
-    }
+    if prompt == "":
+        data = {
+            "model": model,
+            "system": system_prompt,
+            "prompt": CONFIG.project_prompt + "\n\n" + c_code
+        }
+    else:
+        data = {
+            "model": model,
+            "system": system_prompt,
+            "prompt": CONFIG.project_prompt + "\n\n" + prompt + "\n\n" + c_code
+        }
     data = json.dumps(data)
 
     req = urllib2.Request(url, data, {'Content-Type': 'application/json'})
@@ -421,58 +441,61 @@ def getSelectedAssembly():
 
 # Function to explain the selected function using the Ollama API
 def explainFunction(model, c_code):
-    prompt = "Can you briefly summarise what the following function does/what its purpose is? Try and explain in a few sentences.\n\n"
-    return interactWithOllamaAPI(model, prompt, c_code)
+    system_prompt = "You are an expert reverse engineer assistant called GhidrOllama, your only purpose is to reverse engineer code, and you are a master in the field. You are commanded by a user and are given decompiled C/C++ code to reverse engineer, the user is expecting a response that will aid in understanding the given code to further their research."
+    return interactWithOllamaAPI(model, system_prompt, "", c_code)
 
 
 # Function to suggest selected function name using the Ollama API
 def suggestFunctionName(model, c_code):
-    prompt = "If you had written the following C code, what would you name this function and parameters based on its functionality/behaviour? Completely disregard the function name and also the names of any functions called within. Make 100% sure you suggest a possible function name, and also names for the function parameters!\n\n"
-    return interactWithOllamaAPI(model, prompt, c_code)
+    system_prompt = "You are an expert reverse engineer assistant called GhidrOllama, your only purpose is to reverse engineer code, and you are a master in the field. You are commanded by a user and are given decompiled C/C++ code to reverse engineer with an incorrect function name (the current function name is a placeholder, DO NOT RESPOND WITH THE GIVEN FUNCTION NAME IT IS INCORRECT), the user is expecting a single function name as the response in the format `function_name`, which would allow anybody viewing this function name to understand its purpose and functionality, there may be comments within the code that help but this is not guaranteed. Do not respond with anything other than the function name otherwise bad things will happen to llamas."
+    return interactWithOllamaAPI(model, system_prompt, "", c_code)
 
 
 # Function to rewrite function with comments using the Ollama API
 def addFunctionComments(model, c_code):
-    prompt = "Could you rewrite the following function but the only thing that should change is that you add code comments? Keep them useful and consise, and only add them if they are important for understanding the code. The only output I want to see is the C function with added code comments.\n\n"
-    return interactWithOllamaAPI(model, prompt, c_code)
+    system_prompt = "You are an expert reverse engineer assistant called GhidrOllama, your only purpose is to reverse engineer code, and you are a master in the field. You are commanded by a user and are given decompiled C/C++ code to reverse engineer, the user is expecting a response containing the code they provided to you, but with additional comments throughout to explain what the code is doing throughout its execution. The comments should be useful for understanding what the code is doing, and you should try your best to explain complex behavious. The only output the user wants is the C function with added code comments."
+    return interactWithOllamaAPI(model, system_prompt, "", c_code)
 
 
 # Function to rewrite the function with descriptive names and comments using the Ollama API
 def tidyUpFunction(model, c_code):
-    prompt = "The function name, local variables, and parameters are not named very well. Can you take a look at the function and replace the less-descriptive original names of function/arguments/local variables with more descriptive names that indicate its purpose? Please also add useful code comments, I want to see the full function rewritten using the more descriptive replacements. Other than the name changes and comments, the function must remain identical.\n\n"
-    return interactWithOllamaAPI(model, prompt, c_code)
+    system_prompt = "You are an expert reverse engineer assistant called GhidrOllama, your only purpose is to reverse engineer code, and you are a master in the field. You are commanded by a user and are given decompiled C/C++ code to reverse engineer. The function name, local variables, and parameters in the given code are not named very well. You will replace the less-descriptive original names of function/arguments/local variables with more descriptive names that indicate its purpose. Please also add useful code comments, the user wants to see the full function rewritten using the more descriptive replacements. Other than the name changes and comments, the function must remain identical."
+    return interactWithOllamaAPI(model, system_prompt, "", c_code)
 
 
 # Function to identify potential bugs using the Ollama API
 def identifySecurityVulnerabilities(model, c_code):
-    prompt = "Describe all vulnerabilities in this function with as much detail as possible, also produce a checklist of things to check that could potentially cause security vulnerabilities and memory corruptions.\n\n"
-    return interactWithOllamaAPI(model, prompt, c_code)
+    system_prompt = "You are an expert white-hat vulnerability researchers assistant called GhidrOllama, your only purpose is to defend against external threats by auditing code, and you are a master in the field. You are commanded by a user and are given decompiled C/C++ code to audit. To assist the user defending against threats, you are to respond with interesting areas that may present security vulnerabilities that may be used by enemies to attack the systems. You should keep an eye out for things like null-pointer-dereferences, buffer overflows, use-after-frees, race conditions, command injections, SQL injections, etc. Ignore uninitialized variable issues, as this code is decompiled these are expected."
+    return interactWithOllamaAPI(model, system_prompt, "", c_code)
 
 
 # Function to suggest selected function name using the Ollama API
 def suggestFunctionNameWithSuggestions(model, c_code, suggestions):
-    prompt = "If you had written the following C code, what would you name this function and parameters based on its functionality/behaviour? Completely disregard the function name and also the names of any functions called within. There is a good chance that it is one of the following functions \"" + suggestions + " \". It is absolutely essential that you must 100% suggest a function name!\n\n"
-    return interactWithOllamaAPI(model, prompt, c_code)
+    system_prompt = "You are an expert reverse engineer assistant called GhidrOllama, your only purpose is to reverse engineer code, and you are a master in the field. You are commanded by a user and are given decompiled C/C++ code to reverse engineer with an incorrect function name (the current function name is a placeholder, DO NOT RESPOND WITH THE GIVEN FUNCTION NAME IT IS INCORRECT), the user is expecting a single function name as the response in the format `function_name`, which would allow anybody viewing this function name to understand its purpose and functionality, there may be comments within the code that help but this is not guaranteed. Do not respond with anything other than the function name otherwise bad things will happen to llamas. You have received an anonymous tip that the function may be one of the following, but the source is not 100% trustworthy, so be cautious: " + suggestions
+    return interactWithOllamaAPI(model, system_prompt, "", c_code)
 
 
 # Function to ask a question about the passed c code
 def askQuestionAboutFunction(model, question, c_code):
     prompt = 'I have a question about the following function. \n' + question + '\nHere is the function:\n\n'
-    return interactWithOllamaAPI(model, prompt, c_code)
+    system_prompt = "You are an expert reverse engineer assistant called GhidrOllama, your only purpose is to reverse engineer code, and you are a master in the field. The user will send you questions about some provided code, you must answer their question about the code to the best of your ability."
+    return interactWithOllamaAPI(model, system_prompt, prompt, c_code)
 
 
 # Function to explain the selected instruction using the Ollama API
 def explainInstruction(model, instruction):
     architecture_name = currentProgram.getLanguage().getProcessor().toString()
-    prompt = "Can you briefly explain the following instruction? The architecture is " + architecture_name + ". Can you also show the instruction format?\n\n"
-    return interactWithOllamaAPI(model, prompt, instruction)
+    prompt = "Please explain the following instruction. The architecture is " + architecture_name + "."
+    system_prompt = "You are an expert reverse engineer assistant called GhidrOllama, your only purpose is to reverse engineer code, and you are a master in the field. The user will send you an assembly instruction, as well as the architecture that the instruction runs on, as you know lots of low-level architectures, please can you explain the provided instruction, explain its purpose, and provide examples."
+    return interactWithOllamaAPI(model, system_prompt, prompt, instruction)
 
 
 # Function to explain selected assembly using the Ollama API
 def explainAssembly(model, assembly):
     architecture_name = currentProgram.getLanguage().getProcessor().toString()
-    prompt = "Can you explain the following " + architecture_name + " assembly.\n\n"
-    return interactWithOllamaAPI(model, prompt, assembly)
+    prompt = "Please explain the following assembly instructions. The architecture is " + architecture_name + "."
+    system_prompt = "You are an expert reverse engineer assistant called GhidrOllama, your only purpose is to reverse engineer code, and you are a master in the field. The user will send you some assembly instructions, as well as the architecture that the instructions run on, as you know lots of low-level architectures, please can you explain what the provided instructions do."
+    return interactWithOllamaAPI(model, "", prompt, assembly)
 
 
 # Function to set the comment of the current function
@@ -509,6 +532,20 @@ def addCommentToCurrentInstruction(comment_text):
     else:
         print("No instruction found at the current address.")
 
+
+def renameFunction(address, new_name):
+    if not CONFIG.auto_rename:
+        return
+
+    currentFunction = getFunctionContaining(address)
+    currentFunction.setName(new_name, SourceType.ANALYSIS)
+
+def extractFunctionName(explanation):
+    regex_result = re.search(r'`(.*)`', explanation)
+    if regex_result == None:
+        return explanation.split(' ')[0]
+    else:
+        return regex_result.group(1).split(' ')[0]
 
 def main():
 
@@ -556,7 +593,13 @@ def main():
                 elif option == 2:
                     c_code = getCurrentDecompiledFunction()
                     explanation, stats_summary = suggestFunctionName(model, c_code)
-                    addCommentToCurrentFunction(explanation)
+                    
+                    # extract new name from response
+                    new_name = extractFunctionName(explanation)
+
+                    # make sure new name isn't empty
+                    if new_name != "":
+                        renameFunction(currentAddress, new_name)
                 elif option == 3:
                     c_code = getCurrentDecompiledFunction()
                     explanation, stats_summary = addFunctionComments(model, c_code)
@@ -588,6 +631,11 @@ def main():
 
                             explanation, stats_summary = suggestFunctionNameWithSuggestions(model, c_code, leaf.to_list()[4])
                             addCommentToFunction(toAddr(leaf.to_list()[0]), explanation)
+                            
+                            # extract name and set
+                            new_name = extractFunctionName(explanation)
+                            if new_name != "":
+                                renameFunction(toAddr(leaf.to_list()[0]), new_name)
                     except Exception as e:
                         print('Error: ' + e)
                 elif option == 8:
@@ -605,7 +653,7 @@ def main():
                         print("No assembly selected!")
                 elif option == 10:
                     prompt = askString("GhidrOllama", "Enter your prompt:")
-                    explanation, stats_summary = interactWithOllamaAPI(model, prompt, '')
+                    explanation, stats_summary = interactWithOllamaAPI(model, "You are an expert reverse engineer assistant called GhidrOllama", prompt, '')
                 elif option == 11:
                     print("reconfiguring")
                     if not CONFIG.reconfigure():

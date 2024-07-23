@@ -5,5 +5,6 @@
     "scheme": "http",
     "project_prompt": "",
     "set_comments": false,
+    "auto_rename": false,
     "first_run": true 
 }
