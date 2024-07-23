@@ -1,0 +1,9 @@
+{
+    "host": "localhost",
+    "port": 11434,
+    "model": "llama3:8b",
+    "scheme": "http",
+    "project_prompt": "",
+    "set_comments": false,
+    "first_run": true 
+}
