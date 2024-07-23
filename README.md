@@ -1,16 +1,20 @@
 <p align="center">
 
-  <img src="https://github.com/luke-r-m/GhidrOllama/assets/47477832/c21b75ab-f186-4a2b-8206-15c1c1d5218b" width="200">
+  <img src="https://github.com/user-attachments/assets/2decefa3-667f-4816-a49b-56a0f55bba53" width="200">
 
 </p>
 
 <p align="center">
   
-  <img src="https://github.com/luke-r-m/GhidrOllama/assets/47477832/59e1b7e2-6331-4968-ac07-4b5ceded673b" width="400">
+  <img src="https://github.com/luke-r-m/GhidrOllama/assets/47477832/59e1b7e2-6331-4968-ac07-4b5ceded673b" width="350">
 
 </p>
 
+<div align="center">
+
 **Ollama API interaction Ghidra script for LLM-assisted reverse-engineering.**
+
+</div>
 
 ## What is this?
 
