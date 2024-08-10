@@ -1,12 +1,12 @@
 <p align="center">
 
-  <img src="https://github.com/user-attachments/assets/2decefa3-667f-4816-a49b-56a0f55bba53" width="200">
+  <img src="images/logo.png" width="200">
 
 </p>
 
 <p align="center">
   
-  <img src="https://github.com/luke-r-m/GhidrOllama/assets/47477832/59e1b7e2-6331-4968-ac07-4b5ceded673b" width="350">
+  <img src="images/name.png" width="350">
 
 </p>
 
@@ -39,15 +39,6 @@ Now you should be good to go, `localhost:11434` should be ready to handle reques
 
 *Note:* This script also supports remote instances, set the IP address and port during first configuration.
 
-## Usage
-
-1. Place the *GhidrOllama.py* script and the *ghidrollama_utils* directory in your Ghidra script directory (usually `~/ghidra_scripts`).
-2. Find a function/instruction you want to feed to the LLM
-3. Run the script from the Script Manager window
-4. If this is the first time running the script, complete the initial configuration (this can be changed later)
-5. Select how you want to function/instruction to be analysed
-6. Wait until the output is printed to the console (wait time varies depending on model and specifications of host)
-
 ## What can it do?
 
 1. Explain the function that is currently in the decompiler window
@@ -73,6 +64,33 @@ The following config options are available, and can be configured on first run:
 - *Auto-renaming* : Some options try and automatically rename functions based on the responses, this can be enabled/disabled here
 
 Options 11 & 12 can be used to adjust settings after first-run.
+
+## Usage
+
+1. Place the *GhidrOllama.py* script and the *ghidrollama_utils* directory in your Ghidra script directory (usually `~/ghidra_scripts`).
+2. Find a function/instruction you want to feed to the LLM
+3. Run the script from the Script Manager window
+4. If this is the first time running the script, complete the initial configuration (this can be changed later)
+5. Select how you want to function/instruction to be analysed
+6. Wait until the output is printed to the console (wait time varies depending on model and specifications of host)
+
+### Ways to Run
+
+Going into the script window to run this script every time is inconvenient, the script can easily be run in the following ways:
+- *Keybinding*: The default keybinding for this script is *Q*
+- *Toolbar*: A small icon on the toolbar can be clicked to run the script
+
+#### Keybinding
+
+To enable, once you have added your script into the list of Ghidra script directories, locate the script in the list. Right click the result, and select "Assign key binding". If it prompts for a key, enter *q*.
+
+![script_manager.png](images/script_manager.png)
+
+#### Toolbar
+
+To enable the toolbar icon, locate the script in the script manager, and click the tick box in the first column (the *In Toolbar* column). The GhidrOllama icon should appear in the toolbar.
+
+![toolbar_icon.png](images/toolbar_icon.png)
 
 ## Notes
 

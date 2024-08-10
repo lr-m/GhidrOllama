@@ -3,7 +3,7 @@
 # @category LLM-Assisted RE
 # @keybinding q
 # @menupath
-# @toolbar
+# @toolbar toolbar.png
 
 import urllib2
 import json
