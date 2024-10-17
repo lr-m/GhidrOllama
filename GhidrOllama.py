@@ -182,8 +182,8 @@ class Config:
         except CancelledException:
             return False
         print("Selected port: " + str(port))
-        if port == None:
-            return False
+        if port == 0 or port == None:
+            return 11434
 
         # Get scheme
         monitor.setMessage("Waiting for model select...")
