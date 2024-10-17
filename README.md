@@ -20,6 +20,16 @@
 
 This script interacts with Ollama's API to interact with Large Language Models (LLMs). It utilizes the Ollama API to perform various reverse engineering tasks without leaving Ghidra. It supports both local and remote instances of Ollama. This script is inspired by [GptHidra](https://github.com/evyatar9/GptHidra).
 
+### Supported Models
+
+This script supports any model that [Ollama supports](https://ollama.ai/library)
+
+Ollama also recently added support for [any model available on HuggingFace in GGUF format](https://huggingface.co/docs/hub/en/ollama), for example:
+
+```
+ollama run hf.co/arcee-ai/SuperNova-Medius-GGUF
+```
+
 ## Prerequisites
 
 - [Ghidra](https://github.com/NationalSecurityAgency/ghidra)
@@ -28,7 +38,7 @@ This script interacts with Ollama's API to interact with Large Language Models (
 
 ### Ollama Setup
 
-Feel free to replace `llama3.1:8b` with any model from the collection of [Ollama Models](https://ollama.ai/library)
+Feel free to replace `llama3.1:8b` with any of the [Ollama-compatible models](https://ollama.ai/library)
 
 ```
 curl -fsSL https://ollama.com/install.sh | sh
