@@ -6,10 +6,13 @@
 
 import urllib2
 import re
+import sys
 from ghidrollama_utils.config import Config
 from ghidrollama_utils.helper import *
 from ghidrollama_utils.ghidrollama_subscripts import leafblower
 import json
+
+this = sys.modules[__name__]
 
 # General function to interact with the Ollama API
 def interact_with_ollama(model, system_prompt, prompt, c_code):
