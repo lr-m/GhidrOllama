@@ -6,13 +6,10 @@
 
 import urllib2
 import re
-import sys
 from ghidrollama_utils.config import Config
 from ghidrollama_utils.helper import *
 from ghidrollama_utils.ghidrollama_subscripts import leafblower
 import json
-
-this = sys.modules[__name__]
 
 # General function to interact with the Ollama API
 def interact_with_ollama(model, system_prompt, prompt, c_code):
@@ -320,18 +317,18 @@ def handle_general_prompt(model):
 
 def handle_configure_ghidrollama():
     print("Reconfiguring")
-    if not CONFIG.reconfigure(this, monitor):
+    if not CONFIG.reconfigure(monitor):
         print("Failed to reconfigure GhidrOllama")
     return None
 
 def handle_change_model():
     print("Changing model")
-    if not CONFIG.change_model(this, monitor):
+    if not CONFIG.change_model(monitor):
         print("Failed to change the model")
     return None
 
 def handle_toggle_save_responses():
-    if not CONFIG.toggle_save_responses(this, monitor):
+    if not CONFIG.toggle_save_responses(monitor):
         print("Failed to toggle")
     return None
 
@@ -339,7 +336,7 @@ def main():
     monitor.setMessage("Waiting for configuration...")
     if CONFIG.first_run:
         print_ollama()
-        success = CONFIG.reconfigure(this, monitor)
+        success = CONFIG.reconfigure(monitor)
         if not success:
             print("Configuration aborted, exiting...")
             return
@@ -368,7 +365,7 @@ def main():
         for option in options:
             choice_strings.append("{0} - {1}".format(option[0], option[1]))
         
-        choice = this.askChoice("GhidrOllama", "What you want to ask the {0} model:".format(model), choice_strings, "Question Selection")
+        choice = askChoice("GhidrOllama", "What you want to ask the {0} model:".format(model), choice_strings, "Question Selection")
         option = int(choice.split(' ')[0])
         
         if 1 <= option <= len(options):
@@ -384,13 +381,12 @@ def main():
     print('')
 
 
-
 helper = GhidrOllamaHelper(
-            currentProgram,
-            currentAddress,
-            currentLocation,
-            currentSelection
-        )
+    currentProgram,
+    currentAddress,
+    currentLocation,
+    currentSelection
+)
 
-CONFIG = Config()
+CONFIG = Config(this)
 main()

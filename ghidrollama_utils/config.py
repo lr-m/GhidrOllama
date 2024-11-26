@@ -9,7 +9,8 @@ class Config:
     SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
     CONFIG_FILE_PATH = os.path.join(SCRIPT_DIR, "ghidrollama_config.json")
     
-    def __init__(self):
+    def __init__(self, script):
+        self.script = script
         self.config = Config.load()
         if self.config is None:
             raise RuntimeError("Error loading configuration file.")
@@ -70,7 +71,7 @@ class Config:
 
 
     @staticmethod
-    def select_model(state, scheme, host, port):
+    def select_model(script, scheme, host, port):
         """
         Makes a request to the Ollama API to fetch a list of installed models, prompts user to select which model to use.
         Requires a valid hostname/ip to be set first.
@@ -90,7 +91,7 @@ class Config:
                 print("No models found. Did you pull models via the Ollama CLI?")
                 return None
 
-            choice = state.askChoice("GhidrOllama", "Please choose the model you want to use:", model_names, "Model Selection")
+            choice = script.askChoice("GhidrOllama", "Please choose the model you want to use:", model_names, "Model Selection")
 
         except urllib2.HTTPError as e:
             print("HTTP Error {}: {}".format(e.code, e.reason))
@@ -146,14 +147,14 @@ class Config:
         return True
 
 
-    def reconfigure(self, state, monitor):
+    def reconfigure(self, monitor):
         """
         Guide the user through setting new configuration values.
         """
         # Get hostname
         monitor.setMessage("Waiting for hostname")
         try:
-            host = state.askString("GhidrOllama", "Please enter the hostname or IP of your server:", "localhost")
+            host = self.script.askString("GhidrOllama", "Please enter the hostname or IP of your server:", "localhost")
         except CancelledException:
             return False
         print("Selected host: " + host)
@@ -163,7 +164,7 @@ class Config:
         # Get port (if nothing entered, assume 11434 as default)
         monitor.setMessage("Waiting for port")
         try:
-            port = state.askInt("GhidrOllama", "Please enter the port number of your server [1-65535, usually 11434]:")
+            port = self.script.askInt("GhidrOllama", "Please enter the port number of your server [1-65535, usually 11434]:")
         except CancelledException:
             return False
         
@@ -175,7 +176,7 @@ class Config:
         # Get scheme
         monitor.setMessage("Waiting for model select...")
         try:
-            scheme = state.askChoice("GhidrOllama", "Please choose the scheme your server uses:", ["http", "https"], "http")
+            scheme = self.script.askChoice("GhidrOllama", "Please choose the scheme your server uses:", ["http", "https"], "http")
         except CancelledException:
             return False
         print("Selected scheme: " + scheme)
@@ -185,7 +186,7 @@ class Config:
         # Get model
         monitor.setMessage("Waiting for model select...")
         try:
-            model = Config.select_model(state, scheme, host, port)
+            model = Config.select_model(self.script, scheme, host, port)
         except CancelledException:
             return False
         print("Selected model: " + model)
@@ -196,19 +197,19 @@ class Config:
         # Get project-specific prompt/context if desired.
         monitor.setMessage("Waiting for project-specific prompt...")
         try:
-            prompt = state.askString("Project Prompt", "Please enter a project-specific prompt to prepend to all queries, or leave blank (space):", " ")
+            prompt = self.script.askString("Project Prompt", "Please enter a project-specific prompt to prepend to all queries, or leave blank (space):", " ")
             if prompt == None or prompt == " ":
                 prompt = ""
         except CancelledException:
             return False
 
         try:
-            set_comments = state.askYesNo("Set Comments", "Would you like query responses to be stored as function comments?")
+            set_comments = self.script.askYesNo("Set Comments", "Would you like query responses to be stored as function comments?")
         except CancelledException:
             return False
             
         try:
-            auto_rename = state.askYesNo("Auto Renaming", "Would you like GhidrOllama to try and automatically rename functions based on responses?")
+            auto_rename = self.script.askYesNo("Auto Renaming", "Would you like GhidrOllama to try and automatically rename functions based on responses?")
         except CancelledException:
             return False
 
@@ -237,13 +238,13 @@ class Config:
         return True
 
 
-    def change_model(self, state, monitor):
+    def change_model(self, monitor):
         """Change the configured model and persist the change.
         Return true on success."""
 
         monitor.setMessage("Waiting for model select...")
         try:
-            model = Config.select_model(state, self.scheme, self.host, self.port)
+            model = Config.select_model(self.script, self.scheme, self.host, self.port)
         except CancelledException:
             return False
 
@@ -254,9 +255,9 @@ class Config:
         return True
 
     
-    def toggle_save_responses(self, state, monitor):
+    def toggle_save_responses(self, monitor):
         try:
-            set_comments = state.askYesNo("Set Comments", "Would you like query responses to be stored as comments?")
+            set_comments = self.script.askYesNo("Set Comments", "Would you like query responses to be stored as comments?")
         except CancelledException:
             return False
 
